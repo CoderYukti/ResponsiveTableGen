@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Responsive Table Generator</title>
+    <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter&family=Roboto&family=Open+Sans&family=Lato&family=Poppins&family=Ubuntu&family=Merriweather&family=Playfair+Display&family=Fira+Sans&family=Raleway&family=Quicksand&family=Noto+Sans&family=Source+Sans+Pro&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/js-beautify@1.14.7/js/lib/beautify-html.min.js"></script>
+    <!-- Prism CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism.css" rel="stylesheet" />
+    <!-- Prism JS -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-markup.min.js"></script>
+
+
+    <style>
+        :root {
+            --accent: #4F46E5;
+            --bg: #f9fafb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        header {
+            background: var(--card);
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
+            width: 100%;
+        }
+
+        h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        #drop-zone {
+            border: 2px dashed var(--border);
+            background: #f1f5f9;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 16px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #drop-zone:hover {
+            background: #e2e8f0;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: var(--accent);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #4338ca;
+        }
+
+        .style-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .style-panel label {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 6px;
+            display: block;
+            color: var(--muted);
+        }
+
+        .style-panel input[type="color"],
+        .style-panel select {
+            width: 100%;
+            height: 50px;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #f9fafb;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        th,
+        td {
+            border: 1px solid var(--border);
+            padding: 12px;
+            text-align: left;
+            transition: background 0.3s;
+        }
+
+        th {
+            background: #f3f4f6;
+            font-weight: 600;
+        }
+
+        td[contenteditable],
+        th[contenteditable] {
+            background: #fefefe;
+            outline: none;
+        }
+
+        @media screen and (max-width: 768px) {
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            td {
+                position: relative;
+                padding-left: 50%;
+            }
+
+            td::before {
+                content: attr(data-label);
+                position: absolute;
+                top: 12px;
+                left: 12px;
+                font-weight: bold;
+                color: var(--muted);
+                width: 45%;
+                white-space: nowrap;
+            }
+        }
+
+        #generatedCode {
+            margin-top: 30px;
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .controls-with-style {
+            display: flex;
+            column-gap: 20px;
+        }
+
+        .drop-zone {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+            background-color: #f9f9f9;
+        }
+
+        .drop-zone:hover {
+            background-color: #f0f8ff;
+            border-color: #0056b3;
+        }
+
+        .custom-file-upload {
+            display: inline-block;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .custom-file-upload label {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .custom-file-upload input[type="file"] {
+            display: none;
+        }
+
+        #file-name {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .selected-row {
+            outline: 2px solid #ADD8E6 !important;
+        }
+
+        .selected-col {
+            outline: 2px solid #ADD8E6 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <header>Responsive Table Generator</header>
+    <div class="container">
+
+        <div class="drop-zone" id="drop-zone">
+            <div style="font-size: 2.5rem; color: #007bff;">📄</div>
+            <strong>Drag & drop your .docx file here</strong><br>
+            <small>or click to upload</small><br><br>
+            <div class="custom-file-upload">
+                <label for="docxInput">📁 Choose .docx File</label>
+                <input type="file" id="docxInput" accept=".docx" />
+                <span id="file-name">No file selected</span>
+            </div>
+        </div>
+
+
+        <div class="controls-with-style">
+            <div class="card">
+                <h2>Controls</h2>
+                <div class="buttons">
+                    <button onclick="addRow()">Add Row</button>
+                    <button onclick="addColumn()">Add Column</button>
+                    <button onclick="clearTable()">Clear Table</button>
+                    <button onclick="generateOutput()">Generate HTML</button>
+                    <button onclick="copyToClipboard()">Copy HTML</button>
+                    <button onclick="downloadHTML()">Download</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Table Styling</h2>
+                <div class="style-panel">
+                    <div>
+                        <label for="borderColor">Border Color</label>
+                        <input type="color" id="borderColor" value="#e5e7eb">
+                    </div>
+                    <div>
+                        <label for="headerBgColor">Header Background</label>
+                        <input type="color" id="headerBgColor" value="#f3f4f6">
+                    </div>
+                    <div>
+                        <label for="headerTextColor">Header Text Color</label>
+                        <input type="color" id="headerTextColor" value="#111827">
+                    </div>
+                    <div>
+                        <label for="rowBgColor">Row Background</label>
+                        <input type="color" id="rowBgColor" value="#ffffff">
+                    </div>
+                    <div>
+                        <label for="rowTextColor">Row Text Color</label>
+                        <input type="color" id="rowTextColor" value="#1f2937">
+                    </div>
+                    <div>
+                        <label for="fontFamily">Font</label>
+                        <select id="fontFamily">
+                            <option value="Inter">Inter</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Roboto">Roboto</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Helvetica">Helvetica</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Tahoma">Tahoma</option>
+                            <option value="Trebuchet MS">Trebuchet MS</option>
+                            <option value="Palatino Linotype">Palatino Linotype</option>
+                            <option value="Lucida Sans Unicode">Lucida Sans Unicode</option>
+                            <option value="Segoe UI">Segoe UI</option>
+                            <option value="Open Sans">Open Sans</option>
+                            <option value="Lato">Lato</option>
+                            <option value="Poppins">Poppins</option>
+                            <option value="Ubuntu">Ubuntu</option>
+                            <option value="Merriweather">Merriweather</option>
+                            <option value="Playfair Display">Playfair Display</option>
+                            <option value="Fira Sans">Fira Sans</option>
+                            <option value="Raleway">Raleway</option>
+                            <option value="Quicksand">Quicksand</option>
+                            <option value="Noto Sans">Noto Sans</option>
+                            <option value="Source Sans Pro">Source Sans Pro</option>
+                        </select>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Editable Table</h2>
+            <table id="outputTable">
+                <thead>
+                    <tr id="headerRow">
+                        <th contenteditable="true" oninput="updateDataLabels()">Header</th>
+                        <th contenteditable="true" oninput="updateDataLabels()">Header</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td contenteditable="true"></td>
+                        <td contenteditable="true"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="remove-buttons" style="margin: 1em 0;">
+                <button onclick="removeSelectedRow()">Remove Selected Row</button>
+                <button onclick="removeSelectedColumn()">Remove Selected Column</button>
+            </div>
+
+        </div>
+
+        <div class="card">
+            <h2>Generated HTML</h2>
+            <pre id="generatedCode"></pre>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const table = document.getElementById('outputTable');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            const output = document.getElementById('generatedCode');
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('docxInput');
+            const fileNameDisplay = document.getElementById("file-name");
+
+            const removeButtonsWrapper = document.getElementById('remove-buttons');
+
+            const borderColorInput = document.getElementById('borderColor');
+            const headerBgColorInput = document.getElementById('headerBgColor');
+            const headerTextColorInput = document.getElementById('headerTextColor');
+            const rowBgColorInput = document.getElementById('rowBgColor');
+            const rowTextColorInput = document.getElementById('rowTextColor');
+            const fontFamilyInput = document.getElementById('fontFamily');
+
+            let uploadedFileName = "responsive-table";
+
+            [borderColorInput, headerBgColorInput, headerTextColorInput, rowBgColorInput, rowTextColorInput, fontFamilyInput].forEach(input => {
+                input?.addEventListener('input', applyLiveStyles);
+            });
+
+            function applyLiveStyles() {
+                const borderColor = borderColorInput?.value || '#ccc';
+                const headerBg = headerBgColorInput?.value || '#f1f1f1';
+                const headerText = headerTextColorInput?.value || '#000';
+                const rowBg = rowBgColorInput?.value || '#fff';
+                const rowText = rowTextColorInput?.value || '#000';
+                const font = fontFamilyInput?.value || 'sans-serif';
+
+                table.style.fontFamily = font;
+                table.querySelectorAll('th').forEach(th => {
+                    th.style.backgroundColor = headerBg;
+                    th.style.color = headerText;
+                    th.style.border = `1px solid ${borderColor}`;
+                    th.style.fontFamily = font;
+                });
+                table.querySelectorAll('td').forEach(td => {
+                    td.style.backgroundColor = rowBg;
+                    td.style.color = rowText;
+                    td.style.border = `1px solid ${borderColor}`;
+                    td.style.fontFamily = font;
+                });
+            }
+
+            dropZone.addEventListener('dragover', e => {
+                e.preventDefault();
+                dropZone.style.backgroundColor = '#f0f0f0';
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.backgroundColor = '';
+            });
+
+            dropZone.addEventListener('drop', async e => {
+                e.preventDefault();
+                dropZone.style.backgroundColor = '';
+                const file = e.dataTransfer.files[0];
+                if (file && file.name.endsWith('.docx')) {
+                    fileInput.files = e.dataTransfer.files;
+                    await processDocx(file);
+                } else {
+                    alert('Please drop a valid .docx file.');
+                }
+            });
+
+            fileInput.addEventListener('change', async e => {
+                const file = e.target.files[0];
+                if (file && file.name.endsWith('.docx')) {
+                    await processDocx(file);
+                } else {
+                    alert('Please choose a valid .docx file.');
+                }
+            });
+
+            async function processDocx(file) {
+                uploadedFileName = file.name.replace(/\.docx$/, '');
+                fileNameDisplay.textContent = file.name;
+
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.convertToHtml({ arrayBuffer });
+
+                const temp = document.createElement("div");
+                temp.innerHTML = result.value;
+                const firstTable = temp.querySelector("table");
+
+                if (!firstTable) {
+                    alert("No table found in the .docx file.");
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                const headerRow = thead.querySelector('tr');
+                headerRow.innerHTML = '';
+
+                const rows = Array.from(firstTable.rows);
+                Array.from(rows[0].cells).forEach(cell => {
+                    const th = document.createElement('th');
+                    th.contentEditable = true;
+                    th.textContent = cell.textContent.trim();
+                    th.oninput = updateDataLabels;
+                    th.addEventListener('click', () => {
+                        table.querySelectorAll('th').forEach(h => h.classList.remove('selected-col'));
+                        th.classList.add('selected-col');
+                    });
+                    headerRow.appendChild(th);
+                });
+
+                rows.slice(1).forEach(row => {
+                    const tr = document.createElement('tr');
+                    Array.from(row.cells).forEach((cell, i) => {
+                        const td = document.createElement('td');
+                        td.innerHTML = cell.innerHTML.replace(/<\/p>\s*<p>/g, "<br>").replace(/^<p>|<\/p>$/g, "").replace(/\n/g, "<br>").trim();
+                        td.contentEditable = true;
+                        tr.appendChild(td);
+                    });
+
+                    tr.addEventListener('click', () => {
+                        table.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+                        tr.classList.add('selected-row');
+                    });
+
+                    tbody.appendChild(tr);
+                });
+
+                updateDataLabels();
+                applyLiveStyles();
+            }
+
+            window.updateDataLabels = function () {
+                const headers = Array.from(thead.querySelectorAll('th')).map(th => th.textContent.trim());
+                Array.from(tbody.rows).forEach(row => {
+                    Array.from(row.cells).forEach((td, i) => {
+                        td.setAttribute('data-label', headers[i] || `Header ${i + 1}`);
+                    });
+                });
+            };
+
+            window.addRow = function () {
+                const headers = thead.querySelectorAll('th');
+                const row = document.createElement('tr');
+                headers.forEach((th, i) => {
+                    const td = document.createElement('td');
+                    td.contentEditable = true;
+                    td.setAttribute('data-label', th.textContent.trim() || `Header ${i + 1}`);
+                    row.appendChild(td);
+                });
+                row.addEventListener('click', () => {
+                    table.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+                    row.classList.add('selected-row');
+                });
+                tbody.appendChild(row);
+                applyLiveStyles();
+            };
+
+            window.addColumn = function () {
+                const headerRow = thead.querySelector('tr');
+
+                const th = document.createElement('th');
+                th.textContent = 'Header'; // <- No numbering
+                th.contentEditable = true;
+                th.addEventListener('click', () => {
+                    table.querySelectorAll('th').forEach(h => h.classList.remove('selected-col'));
+                    th.classList.add('selected-col');
+                });
+                headerRow.appendChild(th);
+
+                Array.from(tbody.rows).forEach(row => {
+                    const td = document.createElement('td');
+                    td.contentEditable = true;
+                    td.setAttribute('data-label', th.textContent);
+                    row.appendChild(td);
+                });
+
+                updateDataLabels();
+                applyLiveStyles();
+            };
+
+
+            window.removeSelectedRow = function () {
+                const selected = table.querySelector('.selected-row');
+                if (selected) {
+                    selected.remove();
+                    updateDataLabels();
+                } else {
+                    alert("Select a row first");
+                }
+            };
+
+            window.removeSelectedColumn = function () {
+                const selected = table.querySelector('.selected-col');
+                if (selected) {
+                    const index = Array.from(selected.parentElement.children).indexOf(selected);
+                    [thead.querySelector('tr'), ...tbody.querySelectorAll('tr')].forEach(row => {
+                        if (row.children[index]) row.removeChild(row.children[index]);
+                    });
+                    updateDataLabels();
+                } else {
+                    alert("Select a column first");
+                }
+            };
+
+            window.generateOutput = function () {
+                updateDataLabels();
+                const tableClone = table.cloneNode(true);
+
+                tableClone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+                tableClone.querySelectorAll('.selected-row, .selected-col').forEach(el => {
+                    el.classList.remove('selected-row', 'selected-col');
+                });
+
+                const responsiveCSS = `
+<style>
+body { font-family: sans-serif; padding: 20px; }
+table { width: 100%; border-collapse: collapse; }
+table th, table td { border: 1px solid #ccc; padding: 40px 10px 20px 10px; text-align: left; width: calc(100% - 25px);}
+@media (max-width: 768px) {
+  table thead { display: none; }
+  table, tbody, tr{ display: block; width: 100%; }
+  table th, table td{display:block;}
+  tr { margin-bottom: 1rem; border: 1px solid #ccc; padding: 10px; }
+  td { text-align: right; padding-left: 50%; position: relative; }
+  td::before {
+    content: attr(data-label);
+    position: absolute;
+    top:10px;
+    left: 10px;
+    width: 45%;
+    font-weight: bold;
+    text-align: left;
+  }
+}
+</style>`;
+
+                const rawHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Responsive Table</title>
+${responsiveCSS}
+</head>
+<body>
+${tableClone.outerHTML}
+</body>
+</html>`;
+
+                const formattedHTML = typeof html_beautify === 'function'
+                    ? html_beautify(rawHTML.trim(), { indent_size: 2, wrap_line_length: 80, preserve_newlines: true })
+                    : rawHTML;
+
+                output.innerHTML = `<pre><code class="language-html">${Prism.highlight(formattedHTML, Prism.languages.html, 'html')}</code></pre>`;
+                return formattedHTML;
+            };
+
+            window.copyToClipboard = function () {
+                const html = generateOutput();
+                navigator.clipboard.writeText(html).then(() => {
+                    alert("HTML copied to clipboard!");
+                });
+            };
+
+            window.downloadHTML = function () {
+                const html = generateOutput();
+                const blob = new Blob([html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = uploadedFileName + ".html";
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            // ✅ ADD SELECTION EVENTS TO DEFAULT HEADERS AND ROWS
+            thead.querySelectorAll('th').forEach(th => {
+                th.addEventListener('click', () => {
+                    table.querySelectorAll('th').forEach(h => h.classList.remove('selected-col'));
+                    th.classList.add('selected-col');
+                });
+            });
+
+            tbody.querySelectorAll('tr').forEach(tr => {
+                tr.addEventListener('click', () => {
+                    table.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+                    tr.classList.add('selected-row');
+                });
+            });
+
+            applyLiveStyles();
+        });
+    </script>
+
+</body>
+
+</html>
