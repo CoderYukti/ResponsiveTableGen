@@ -15,61 +15,35 @@ A powerful, customizable HTML table generator that supports live editing, color 
 
 ---
 
-## 🚀 Getting Started
+## 🔗 Use Online
 
-1. **Clone this repo** or [Download ZIP](https://github.com/CoderYukti/ResponsiveTableGen/archive/refs/heads/main.zip)
+You don’t need to install anything. Use it directly via your browser:
 
-2. **Open `index.html`** in your browser
-
-3. Start building your table:
-   - Create a table from scratch or
-   - Drag and drop a `.docx` file with a table
-
-4. Customize your styles using the sidebar:
-   - Font family
-   - Header and row background/text colors
-   - Border color
-
-5. Use the buttons:
-   - `Generate HTML` to see the output
-   - `Copy HTML` to clipboard
-   - `Download HTML` as a file
+➡️ **[https://table-gen-theta.vercel.app/](https://table-gen-theta.vercel.app/)**
 
 ---
 
 ## 📦 Dependencies
 
-- [Mammoth.js](https://github.com/mwilliamson/mammoth.js) – for DOCX to HTML conversion
-- [Prism.js](https://prismjs.com/) – for HTML syntax highlighting
-- Optional: [html-beautify](https://beautifier.io/) – for nicely formatted HTML output
+- [Mammoth.js](https://github.com/mwilliamson/mammoth.js) – for DOCX to HTML conversion  
+- [Prism.js](https://prismjs.com/) – for HTML syntax highlighting  
+- [html-beautify](https://beautifier.io/) – for clean, readable HTML output  
 
 All libraries are loaded via CDN in the `index.html`.
 
 ---
 
-## 🔧 Customization Tips
+## 🧩 Contributing
 
-- Modify table default styles in `style.css` or inline `<style>` tag
-- Add more fonts or styles to the dropdown in HTML
-- Extend support for additional file types or formats if needed
-
----
-
-## 🧩 Contribution
-
-Pull requests are welcome! If you have suggestions or improvements (like better formatting or features like CSV upload), feel free to open an issue or submit a PR.
-
----
-
-## 📄 License
-
-This project is open-sourced under the [MIT License](LICENSE).
+Pull requests are welcome!  
+If you have suggestions, feel free to open an issue or submit a PR.
 
 ---
 
 ## 🙌 Acknowledgements
 
-Thanks to the open-source community for tools like:
-- Mammoth.js
-- Prism.js
+Big thanks to the open-source community for tools like:
+
+- Mammoth.js  
+- Prism.js  
 - html-beautify
