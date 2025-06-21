@@ -356,20 +356,22 @@
 
         <div class="card">
             <h2>Editable Table</h2>
-            <table id="outputTable">
-                <thead>
-                    <tr id="headerRow">
-                        <th contenteditable="true" oninput="updateDataLabels()">Header</th>
-                        <th contenteditable="true" oninput="updateDataLabels()">Header</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td contenteditable="true"></td>
-                        <td contenteditable="true"></td>
-                    </tr>
-                </tbody>
-            </table>
+            <div id="output-table-container">
+                <table class="responsive-table">
+                    <thead>
+                        <tr id="headerRow">
+                            <th contenteditable="true" oninput="updateDataLabels()">Header</th>
+                            <th contenteditable="true" oninput="updateDataLabels()">Header</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             <div id="remove-buttons" style="margin: 1em 0;">
                 <button onclick="removeSelectedRow()">Remove Selected Row</button>
                 <button onclick="removeSelectedColumn()">Remove Selected Column</button>
@@ -386,15 +388,14 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const table = document.getElementById('outputTable');
+            let activeTable = document.querySelector('.responsive-table');
+            const table = activeTable;
             const thead = table.querySelector('thead');
             const tbody = table.querySelector('tbody');
             const output = document.getElementById('generatedCode');
             const dropZone = document.getElementById('drop-zone');
             const fileInput = document.getElementById('docxInput');
             const fileNameDisplay = document.getElementById("file-name");
-
-            const removeButtonsWrapper = document.getElementById('remove-buttons');
 
             const borderColorInput = document.getElementById('borderColor');
             const headerBgColorInput = document.getElementById('headerBgColor');
@@ -417,18 +418,19 @@
                 const rowText = rowTextColorInput?.value || '#000';
                 const font = fontFamilyInput?.value || 'sans-serif';
 
-                table.style.fontFamily = font;
-                table.querySelectorAll('th').forEach(th => {
-                    th.style.backgroundColor = headerBg;
-                    th.style.color = headerText;
-                    th.style.border = `1px solid ${borderColor}`;
-                    th.style.fontFamily = font;
-                });
-                table.querySelectorAll('td').forEach(td => {
-                    td.style.backgroundColor = rowBg;
-                    td.style.color = rowText;
-                    td.style.border = `1px solid ${borderColor}`;
-                    td.style.fontFamily = font;
+                document.querySelectorAll('table').forEach(tbl => {
+                    tbl.querySelectorAll('th').forEach(th => {
+                        th.style.backgroundColor = headerBg;
+                        th.style.color = headerText;
+                        th.style.border = `1px solid ${borderColor}`;
+                        th.style.fontFamily = font;
+                    });
+                    tbl.querySelectorAll('td').forEach(td => {
+                        td.style.backgroundColor = rowBg;
+                        td.style.color = rowText;
+                        td.style.border = `1px solid ${borderColor}`;
+                        td.style.fontFamily = font;
+                    });
                 });
             }
 
@@ -471,54 +473,69 @@
 
                 const temp = document.createElement("div");
                 temp.innerHTML = result.value;
-                const firstTable = temp.querySelector("table");
+                const allTables = temp.querySelectorAll("table");
 
-                if (!firstTable) {
+                if (allTables.length === 0) {
                     alert("No table found in the .docx file.");
                     return;
                 }
 
-                tbody.innerHTML = '';
-                const headerRow = thead.querySelector('tr');
-                headerRow.innerHTML = '';
+                document.getElementById('output-table-container').innerHTML = '';
+                const wrapper = document.createElement('div');
+                wrapper.id = 'table-wrapper';
+                document.getElementById('output-table-container').appendChild(wrapper);
 
-                const rows = Array.from(firstTable.rows);
-                Array.from(rows[0].cells).forEach(cell => {
-                    const th = document.createElement('th');
-                    th.contentEditable = true;
-                    th.textContent = cell.textContent.trim();
-                    th.oninput = updateDataLabels;
-                    th.addEventListener('click', () => {
-                        table.querySelectorAll('th').forEach(h => h.classList.remove('selected-col'));
-                        th.classList.add('selected-col');
+                allTables.forEach((tbl, index) => {
+                    const newTable = document.createElement('table');
+                    newTable.className = 'responsive-table';
+                    newTable.innerHTML = `<thead><tr></tr></thead><tbody></tbody>`;
+                    wrapper.appendChild(newTable);
+
+                    const thead = newTable.querySelector('thead tr');
+                    const tbody = newTable.querySelector('tbody');
+                    const rows = Array.from(tbl.rows);
+
+                    Array.from(rows[0].cells).forEach(cell => {
+                        const th = document.createElement('th');
+                        th.contentEditable = true;
+                        th.textContent = cell.textContent.trim();
+                        th.addEventListener('click', () => {
+                            newTable.querySelectorAll('th').forEach(h => h.classList.remove('selected-col'));
+                            th.classList.add('selected-col');
+                            activeTable = newTable;
+                        });
+                        thead.appendChild(th);
                     });
-                    headerRow.appendChild(th);
+
+                    rows.slice(1).forEach(row => {
+                        const tr = document.createElement('tr');
+                        Array.from(row.cells).forEach((cell, i) => {
+                            const td = document.createElement('td');
+                            td.innerHTML = cell.innerHTML
+                                .replace(/<\/p>\s*<p>/g, "<br>")
+                                .replace(/^<p>|<\/p>$/g, "")
+                                .replace(/\n/g, "<br>")
+                                .trim();
+                            td.contentEditable = true;
+                            td.setAttribute('data-label', thead.children[i]?.textContent.trim());
+                            tr.appendChild(td);
+                        });
+                        tr.addEventListener('click', () => {
+                            newTable.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+                            tr.classList.add('selected-row');
+                            activeTable = newTable;
+                        });
+                        tbody.appendChild(tr);
+                    });
                 });
 
-                rows.slice(1).forEach(row => {
-                    const tr = document.createElement('tr');
-                    Array.from(row.cells).forEach((cell, i) => {
-                        const td = document.createElement('td');
-                        td.innerHTML = cell.innerHTML.replace(/<\/p>\s*<p>/g, "<br>").replace(/^<p>|<\/p>$/g, "").replace(/\n/g, "<br>").trim();
-                        td.contentEditable = true;
-                        tr.appendChild(td);
-                    });
-
-                    tr.addEventListener('click', () => {
-                        table.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
-                        tr.classList.add('selected-row');
-                    });
-
-                    tbody.appendChild(tr);
-                });
-
-                updateDataLabels();
                 applyLiveStyles();
             }
 
             window.updateDataLabels = function () {
-                const headers = Array.from(thead.querySelectorAll('th')).map(th => th.textContent.trim());
-                Array.from(tbody.rows).forEach(row => {
+                if (!activeTable) return;
+                const headers = Array.from(activeTable.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                Array.from(activeTable.querySelectorAll('tbody tr')).forEach(row => {
                     Array.from(row.cells).forEach((td, i) => {
                         td.setAttribute('data-label', headers[i] || `Header ${i + 1}`);
                     });
@@ -526,7 +543,8 @@
             };
 
             window.addRow = function () {
-                const headers = thead.querySelectorAll('th');
+                if (!activeTable) return;
+                const headers = activeTable.querySelectorAll('thead th');
                 const row = document.createElement('tr');
                 headers.forEach((th, i) => {
                     const td = document.createElement('td');
@@ -535,26 +553,26 @@
                     row.appendChild(td);
                 });
                 row.addEventListener('click', () => {
-                    table.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+                    activeTable.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
                     row.classList.add('selected-row');
                 });
-                tbody.appendChild(row);
+                activeTable.querySelector('tbody').appendChild(row);
                 applyLiveStyles();
             };
 
             window.addColumn = function () {
-                const headerRow = thead.querySelector('tr');
-
+                if (!activeTable) return;
+                const headerRow = activeTable.querySelector('thead tr');
                 const th = document.createElement('th');
-                th.textContent = 'Header'; // <- No numbering
+                th.textContent = 'Header';
                 th.contentEditable = true;
                 th.addEventListener('click', () => {
-                    table.querySelectorAll('th').forEach(h => h.classList.remove('selected-col'));
+                    activeTable.querySelectorAll('th').forEach(h => h.classList.remove('selected-col'));
                     th.classList.add('selected-col');
                 });
                 headerRow.appendChild(th);
 
-                Array.from(tbody.rows).forEach(row => {
+                Array.from(activeTable.querySelectorAll('tbody tr')).forEach(row => {
                     const td = document.createElement('td');
                     td.contentEditable = true;
                     td.setAttribute('data-label', th.textContent);
@@ -565,9 +583,9 @@
                 applyLiveStyles();
             };
 
-
             window.removeSelectedRow = function () {
-                const selected = table.querySelector('.selected-row');
+                if (!activeTable) return;
+                const selected = activeTable.querySelector('.selected-row');
                 if (selected) {
                     selected.remove();
                     updateDataLabels();
@@ -577,10 +595,11 @@
             };
 
             window.removeSelectedColumn = function () {
-                const selected = table.querySelector('.selected-col');
+                if (!activeTable) return;
+                const selected = activeTable.querySelector('.selected-col');
                 if (selected) {
                     const index = Array.from(selected.parentElement.children).indexOf(selected);
-                    [thead.querySelector('tr'), ...tbody.querySelectorAll('tr')].forEach(row => {
+                    [activeTable.querySelector('thead tr'), ...activeTable.querySelectorAll('tbody tr')].forEach(row => {
                         if (row.children[index]) row.removeChild(row.children[index]);
                     });
                     updateDataLabels();
@@ -591,30 +610,71 @@
 
             window.generateOutput = function () {
                 updateDataLabels();
-                const tableClone = table.cloneNode(true);
+                const wrapper = document.getElementById('table-wrapper');
+                let tableHTML = '';
 
-                tableClone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
-                tableClone.querySelectorAll('.selected-row, .selected-col').forEach(el => {
-                    el.classList.remove('selected-row', 'selected-col');
-                });
+                const target = wrapper || document.querySelector('.responsive-table');
+                const clone = target.cloneNode(true);
+                clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+                clone.querySelectorAll('.selected-row, .selected-col').forEach(el => el.classList.remove('selected-row', 'selected-col'));
+                clone.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+                clone.querySelectorAll('th[oninput]').forEach(th => th.removeAttribute('oninput'));
+                clone.querySelectorAll('[id="headerRow"], [id="outputTable"]').forEach(el => el.removeAttribute('id'));
+
+                tableHTML = wrapper ? clone.innerHTML : clone.outerHTML;
+
+                const borderColor = borderColorInput?.value || '#ccc';
+                const headerBg = headerBgColorInput?.value || '#f1f1f1';
+                const headerText = headerTextColorInput?.value || '#000';
+                const rowBg = rowBgColorInput?.value || '#fff';
+                const rowText = rowTextColorInput?.value || '#000';
+                const font = fontFamilyInput?.value || 'sans-serif';
 
                 const responsiveCSS = `
 <style>
-body { font-family: sans-serif; padding: 20px; }
-table { width: 100%; border-collapse: collapse; }
-table th, table td { border: 1px solid #ccc; padding: 40px 10px 20px 10px; text-align: left; width: calc(100% - 25px);}
+body { font-family: ${font}; padding: 20px; }
+.responsive-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ${font};
+  margin-bottom:20px;
+}
+.responsive-table th {
+  background-color: ${headerBg};
+  color: ${headerText};
+  border: 1px solid ${borderColor};
+  font-family: ${font};
+  padding:12px;
+}
+.responsive-table td {
+  background-color: ${rowBg};
+  color: ${rowText};
+  border: 1px solid ${borderColor};
+  font-family: ${font};
+  padding: 40px 10px 20px 10px;
+  text-align: left;
+  width: calc(100% - 25px);
+}
 @media (max-width: 768px) {
-  table thead { display: none; }
-  table, tbody, tr{ display: block; width: 100%; }
-  table th, table td{display:block;}
-  tr { margin-bottom: 1rem; border: 1px solid #ccc; padding: 10px; }
-  td { text-align: right; padding-left: 50%; position: relative; }
-  td::before {
+  .responsive-table thead { display: none; }
+  .responsive-table, .responsive-table tbody, .responsive-table tr { display: block; width: 100%; }
+  .responsive-table th, .responsive-table td { display: block; }
+  .responsive-table tr {
+    margin-bottom: 1rem;
+    border: 1px solid ${borderColor};
+    padding: 10px;
+  }
+  .responsive-table td {
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+  }
+  .responsive-table td::before {
     content: attr(data-label);
     position: absolute;
-    top:10px;
+    top: 10px;
     left: 10px;
-    width: 45%;
+    width: 100%;
     font-weight: bold;
     text-align: left;
   }
@@ -631,7 +691,7 @@ table th, table td { border: 1px solid #ccc; padding: 40px 10px 20px 10px; text-
 ${responsiveCSS}
 </head>
 <body>
-${tableClone.outerHTML}
+${tableHTML}
 </body>
 </html>`;
 
@@ -661,11 +721,11 @@ ${tableClone.outerHTML}
                 URL.revokeObjectURL(url);
             };
 
-            // ✅ ADD SELECTION EVENTS TO DEFAULT HEADERS AND ROWS
             thead.querySelectorAll('th').forEach(th => {
                 th.addEventListener('click', () => {
                     table.querySelectorAll('th').forEach(h => h.classList.remove('selected-col'));
                     th.classList.add('selected-col');
+                    activeTable = table;
                 });
             });
 
@@ -673,6 +733,7 @@ ${tableClone.outerHTML}
                 tr.addEventListener('click', () => {
                     table.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
                     tr.classList.add('selected-row');
+                    activeTable = table;
                 });
             });
 
